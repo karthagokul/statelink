@@ -1,0 +1,36 @@
+# Copyright (C) 2026 Gokul Kartha
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+services:
+  statelink:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      STATELINK_BIND: "0.0.0.0:8080"
+      STATELINK_AUTH_FILE: "/etc/statelink/auth.json"
+      STATELINK_POLICY_FILE: "/etc/statelink/policy.json"
+      RUST_LOG: "statelink_server=info"
+    volumes:
+      - ./config/dev-auth.json:/etc/statelink/auth.json:ro
+      - ./config/dev-policy.json:/etc/statelink/policy.json:ro
+
+  consumer:
+    build: .
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["sleep 1; exec /usr/local/bin/statelink-consumer"]
+    environment:
+      STATELINK_URL: "ws://statelink:8080/statelink"
+      STATELINK_TOKEN: "hmi-token"
+    depends_on:
+      - statelink
+
+  producer:
+    build: .
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["sleep 2; exec /usr/local/bin/statelink-producer"]
+    environment:
+      STATELINK_URL: "ws://statelink:8080/statelink"
+      STATELINK_TOKEN: "camera-token"
+    depends_on:
+      - statelink
