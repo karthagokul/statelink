@@ -241,9 +241,8 @@ impl Bus {
         let affected: Vec<String> = self
             .contexts
             .iter()
-            .filter_map(|(topic, record)| {
-                (record.active_session == Some(session_id)).then(|| topic.clone())
-            })
+            .filter(|(_, record)| record.active_session == Some(session_id))
+            .map(|(topic, _)| topic.clone())
             .collect();
 
         let mut stale_topics = Vec::new();
@@ -289,6 +288,9 @@ impl Bus {
             .collect()
     }
 
+    // DECLARE mirrors the protocol fields explicitly; keeping these arguments visible
+    // avoids a duplicate internal transfer type while preserving the wire contract.
+    #[allow(clippy::too_many_arguments)]
     fn declare(
         &mut self,
         session: &Session,
