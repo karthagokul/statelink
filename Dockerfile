@@ -1,7 +1,7 @@
 # Copyright (C) 2026 Gokul Kartha
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-FROM rust:1.79-bookworm AS builder
+FROM rust:1.85-bookworm AS builder
 WORKDIR /src
 COPY . .
 RUN cargo build --release \
