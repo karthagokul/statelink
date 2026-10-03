@@ -15,7 +15,7 @@ edition = "2021"
 license = "GPL-3.0-or-later"
 authors = ["Gokul Kartha"]
 repository = "https://github.com/karthagokul/statelink"
-rust-version = "1.79"
+rust-version = "1.85"
 
 [workspace.dependencies]
 axum = { version = "0.7", features = ["ws"] }
