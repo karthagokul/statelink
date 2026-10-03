@@ -22,6 +22,120 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.85
         with:
           components: rustfmt
+      - name: Refactor core lint findings
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("crates/statelink-core/src/bus.rs")
+          text = path.read_text()
+
+          old = '''        let affected: Vec<String> = self
+              .contexts
+              .iter()
+              .filter_map(|(topic, record)| {
+                  (record.active_session == Some(session_id)).then(|| topic.clone())
+              })
+              .collect();'''
+          new = '''        let affected: Vec<String> = self
+              .contexts
+              .iter()
+              .filter(|(_, record)| record.active_session == Some(session_id))
+              .map(|(topic, _)| topic.clone())
+              .collect();'''
+          if old not in text:
+              raise SystemExit("disconnect-session snippet not found")
+          text = text.replace(old, new, 1)
+
+          marker = '''struct Subscription {
+              id: SubscriptionId,
+              session_id: SessionId,
+              identity: Identity,
+              filter: String,
+          }
+'''
+          replacement = marker + '''
+          #[derive(Debug, Clone)]
+          struct DeclareParams {
+              topic: String,
+              schema: Option<String>,
+              value: Value,
+              access: AccessPolicy,
+              retention: Retention,
+              ttl: Option<u64>,
+              applied_revision: Option<Revision>,
+          }
+'''
+          if marker not in text:
+              raise SystemExit("subscription marker not found")
+          text = text.replace(marker, replacement, 1)
+
+          old = '''            } => self
+                  .declare(
+                      session,
+                      topic,
+                      schema,
+                      value,
+                      access,
+                      retention,
+                      ttl,
+                      applied_revision,
+                      now_ms,
+                  )'''
+          new = '''            } => self
+                  .declare(
+                      session,
+                      DeclareParams {
+                          topic,
+                          schema,
+                          value,
+                          access,
+                          retention,
+                          ttl,
+                          applied_revision,
+                      },
+                      now_ms,
+                  )'''
+          if old not in text:
+              raise SystemExit("declare call snippet not found")
+          text = text.replace(old, new, 1)
+
+          old = '''    fn declare(
+              &mut self,
+              session: &Session,
+              topic_name: String,
+              schema: Option<String>,
+              value: Value,
+              access: AccessPolicy,
+              retention: Retention,
+              ttl: Option<u64>,
+              applied_revision: Option<Revision>,
+              now_ms: u64,
+          ) -> Result<Vec<Delivery>, BusError> {
+              validate_topic(&topic_name)?;'''
+          new = '''    fn declare(
+              &mut self,
+              session: &Session,
+              params: DeclareParams,
+              now_ms: u64,
+          ) -> Result<Vec<Delivery>, BusError> {
+              let DeclareParams {
+                  topic: topic_name,
+                  schema,
+                  value,
+                  access,
+                  retention,
+                  ttl,
+                  applied_revision,
+              } = params;
+
+              validate_topic(&topic_name)?;'''
+          if old not in text:
+              raise SystemExit("declare function snippet not found")
+          text = text.replace(old, new, 1)
+
+          path.write_text(text)
+          PY
       - name: Normalize
         run: |
           cargo fmt --all
@@ -34,5 +148,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "style: apply rustfmt and lock dependencies"
+          git commit -m "refactor: address core clippy findings"
           git push origin HEAD:feat/rust-core-v0.1
