@@ -1,0 +1,9 @@
+# Copyright (C) 2026 Gokul Kartha
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+/target/
+.env
+*.log
+.DS_Store
+.idea/
+.vscode/
