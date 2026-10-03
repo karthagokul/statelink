@@ -1,0 +1,12 @@
+{
+  "tokens": {
+    "camera-token": {
+      "id": "demo-producer",
+      "roles": ["producer"]
+    },
+    "hmi-token": {
+      "id": "demo-hmi",
+      "roles": ["hmi"]
+    }
+  }
+}
