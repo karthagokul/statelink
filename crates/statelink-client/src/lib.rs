@@ -54,7 +54,7 @@ impl Client {
 
     pub async fn send(&mut self, request: &Request) -> Result<(), ClientError> {
         let payload = serde_json::to_string(request)?;
-        self.socket.send(Message::Text(payload.into())).await?;
+        self.socket.send(Message::Text(payload)).await?;
         Ok(())
     }
 
