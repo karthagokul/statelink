@@ -2,18 +2,28 @@
 members = [
     "crates/statelink-protocol",
     "crates/statelink-core",
+    "crates/statelink-client",
+    "crates/statelink-server",
 ]
+default-members = ["crates/statelink-server"]
 resolver = "2"
 
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-license = "Apache-2.0"
+license = "GPL-3.0-or-later"
 authors = ["Gokul Kartha"]
 repository = "https://github.com/karthagokul/statelink"
 rust-version = "1.79"
 
 [workspace.dependencies]
+axum = { version = "0.7", features = ["ws"] }
+futures-util = "0.3"
+http = "1.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "2.0"
+tokio = { version = "1.40", features = ["full"] }
+tokio-tungstenite = { version = "0.24", features = ["rustls-tls-webpki-roots"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
