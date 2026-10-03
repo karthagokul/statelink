@@ -17,8 +17,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .init();
 
-    let statelink_url = env::var("STATELINK_URL")
-        .unwrap_or_else(|_| "ws://127.0.0.1:8080/statelink".into());
+    let statelink_url =
+        env::var("STATELINK_URL").unwrap_or_else(|_| "ws://127.0.0.1:8080/statelink".into());
     let statelink_token = env::var("STATELINK_TOKEN")?;
     let statelink_filter = env::var("STATELINK_FILTER").unwrap_or_else(|_| "#".into());
 
@@ -26,8 +26,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mqtt_port = env::var("MQTT_PORT")
         .unwrap_or_else(|_| "1883".into())
         .parse::<u16>()?;
-    let mqtt_client_id =
-        env::var("MQTT_CLIENT_ID").unwrap_or_else(|_| "statelink-export".into());
+    let mqtt_client_id = env::var("MQTT_CLIENT_ID").unwrap_or_else(|_| "statelink-export".into());
 
     let mut options = MqttOptions::new(mqtt_client_id, mqtt_host, mqtt_port);
     options.set_keep_alive(Duration::from_secs(30));

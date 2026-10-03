@@ -117,11 +117,7 @@ async fn websocket_handler(
         .into_response()
 }
 
-async fn handle_socket(
-    state: AppState,
-    socket: WebSocket,
-    identity: statelink_core::Identity,
-) {
+async fn handle_socket(state: AppState, socket: WebSocket, identity: statelink_core::Identity) {
     let session_id = state.next_session.fetch_add(1, Ordering::Relaxed);
     let session = Session::new(session_id, identity.clone());
     let (outbound_tx, mut outbound_rx) = mpsc::channel::<Message>(state.outbound_queue);

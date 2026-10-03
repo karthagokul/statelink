@@ -56,14 +56,20 @@ pub struct OriginPolicy {
 impl OriginPolicy {
     pub fn new(origins: impl IntoIterator<Item = String>) -> Self {
         Self {
-            allowed: origins.into_iter().filter(|origin| !origin.is_empty()).collect(),
+            allowed: origins
+                .into_iter()
+                .filter(|origin| !origin.is_empty())
+                .collect(),
         }
     }
 
     /// Native clients normally omit Origin and are accepted. Browser clients
     /// send Origin and must match the explicit allow-list.
     pub fn allows(&self, headers: &HeaderMap) -> bool {
-        match headers.get(header::ORIGIN).and_then(|value| value.to_str().ok()) {
+        match headers
+            .get(header::ORIGIN)
+            .and_then(|value| value.to_str().ok())
+        {
             None => true,
             Some(origin) => self.allowed.contains(origin),
         }
@@ -103,7 +109,10 @@ mod tests {
     #[test]
     fn bearer_authentication_works() {
         let mut headers = HeaderMap::new();
-        headers.insert(header::AUTHORIZATION, HeaderValue::from_static("Bearer secret"));
+        headers.insert(
+            header::AUTHORIZATION,
+            HeaderValue::from_static("Bearer secret"),
+        );
         assert_eq!(authenticator().authenticate(&headers).unwrap().id, "camera");
     }
 
@@ -121,9 +130,15 @@ mod tests {
     fn browser_origin_is_deny_by_default() {
         let policy = OriginPolicy::new(["https://hmi.example".into()]);
         let mut headers = HeaderMap::new();
-        headers.insert(header::ORIGIN, HeaderValue::from_static("https://evil.example"));
+        headers.insert(
+            header::ORIGIN,
+            HeaderValue::from_static("https://evil.example"),
+        );
         assert!(!policy.allows(&headers));
-        headers.insert(header::ORIGIN, HeaderValue::from_static("https://hmi.example"));
+        headers.insert(
+            header::ORIGIN,
+            HeaderValue::from_static("https://hmi.example"),
+        );
         assert!(policy.allows(&headers));
     }
 

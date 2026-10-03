@@ -8,8 +8,7 @@ use statelink_protocol::{Request, Response};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let url = env::var("STATELINK_URL")
-        .unwrap_or_else(|_| "ws://127.0.0.1:8080/statelink".into());
+    let url = env::var("STATELINK_URL").unwrap_or_else(|_| "ws://127.0.0.1:8080/statelink".into());
     let token = env::var("STATELINK_TOKEN").unwrap_or_else(|_| "hmi-token".into());
 
     let mut client = Client::connect(&url, &token).await?;

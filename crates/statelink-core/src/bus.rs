@@ -138,10 +138,15 @@ impl Bus {
                     applied_revision,
                     now_ms,
                 )
-                .map(|deliveries| (Response::Ok {
-                    id: request_id,
-                    subscription: None,
-                }, deliveries)),
+                .map(|deliveries| {
+                    (
+                        Response::Ok {
+                            id: request_id,
+                            subscription: None,
+                        },
+                        deliveries,
+                    )
+                }),
             Request::Set {
                 topic,
                 value,
@@ -149,18 +154,16 @@ impl Bus {
                 applied_revision,
                 ..
             } => self
-                .set(
-                    session,
-                    &topic,
-                    value,
-                    schema,
-                    applied_revision,
-                    now_ms,
-                )
-                .map(|deliveries| (Response::Ok {
-                    id: request_id,
-                    subscription: None,
-                }, deliveries)),
+                .set(session, &topic, value, schema, applied_revision, now_ms)
+                .map(|deliveries| {
+                    (
+                        Response::Ok {
+                            id: request_id,
+                            subscription: None,
+                        },
+                        deliveries,
+                    )
+                }),
             Request::Get { topic, .. } => self.get(session, &topic, now_ms).map(|state| {
                 (
                     Response::State {
@@ -170,32 +173,40 @@ impl Bus {
                     Vec::new(),
                 )
             }),
-            Request::Discover { filter, .. } => self.discover(session, &filter, now_ms).map(|contexts| {
-                (
-                    Response::Discovery {
-                        id: request_id,
-                        contexts,
-                    },
-                    Vec::new(),
-                )
-            }),
-            Request::Subscribe { filter, .. } => self.subscribe(session, filter, now_ms).map(
-                |(subscription, deliveries)| {
+            Request::Discover { filter, .. } => {
+                self.discover(session, &filter, now_ms).map(|contexts| {
+                    (
+                        Response::Discovery {
+                            id: request_id,
+                            contexts,
+                        },
+                        Vec::new(),
+                    )
+                })
+            }
+            Request::Subscribe { filter, .. } => {
+                self.subscribe(session, filter, now_ms)
+                    .map(|(subscription, deliveries)| {
+                        (
+                            Response::Ok {
+                                id: request_id,
+                                subscription: Some(subscription),
+                            },
+                            deliveries,
+                        )
+                    })
+            }
+            Request::Unsubscribe { subscription, .. } => {
+                self.unsubscribe(session, subscription).map(|()| {
                     (
                         Response::Ok {
                             id: request_id,
-                            subscription: Some(subscription),
+                            subscription: None,
                         },
-                        deliveries,
+                        Vec::new(),
                     )
-                },
-            ),
-            Request::Unsubscribe { subscription, .. } => self
-                .unsubscribe(session, subscription)
-                .map(|()| (Response::Ok {
-                    id: request_id,
-                    subscription: None,
-                }, Vec::new())),
+                })
+            }
             Request::Remove { topic, .. } => self.remove(session, &topic).map(|()| {
                 (
                     Response::Ok {
@@ -860,7 +871,10 @@ mod tests {
         let declared = declare_status(&mut bus, Retention::Session);
         assert_eq!(declared.deliveries.len(), 1);
         assert_eq!(declared.deliveries[0].session_id, hmi().id);
-        assert!(matches!(declared.deliveries[0].response, Response::Update { .. }));
+        assert!(matches!(
+            declared.deliveries[0].response,
+            Response::Update { .. }
+        ));
     }
 
     #[test]
