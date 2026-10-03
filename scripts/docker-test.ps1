@@ -7,5 +7,5 @@ $Root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 docker run --rm `
   -v "${Root}:/workspace" `
   -w /workspace `
-  rust:1.79-bookworm `
+  rust:1.85-bookworm `
   bash -lc "rustup component add rustfmt clippy && cargo fmt --all -- --check && cargo clippy --workspace --all-targets --all-features -- -D warnings && cargo test --workspace --all-targets"
