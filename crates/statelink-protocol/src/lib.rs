@@ -1,7 +1,18 @@
+// Copyright (C) 2026 Gokul Kartha
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+//! StateLink protocol wire types.
+//!
+//! StateLink is state-oriented: revisions identify newer complete state, not a
+//! guaranteed event history. Consumers must tolerate revision gaps.
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 pub mod topic;
+
+pub const PROTOCOL_VERSION: &str = "0.1";
+pub const WEBSOCKET_SUBPROTOCOL: &str = "statelink.v1";
 
 pub type RequestId = u64;
 pub type Revision = u64;
@@ -9,6 +20,11 @@ pub type SubscriptionId = u64;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub struct AccessPolicy {
+    /// Subject selectors allowed to read/subscribe to this context.
+    ///
+    /// Supported by the reference implementation: `*`, `id:<glob>`,
+    /// `service:<glob>`, and `role:<glob>`. An empty list exposes the context
+    /// only to its owner, subject to system policy.
     #[serde(default)]
     pub read: Vec<String>,
 }
@@ -50,6 +66,8 @@ pub enum Request {
         id: RequestId,
         topic: String,
         value: Value,
+        /// Optional only so an implementation can explicitly reject an attempt
+        /// to mutate the immutable schema contract.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         schema: Option<String>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -77,14 +95,31 @@ pub enum Request {
     },
 }
 
+impl Request {
+    pub fn id(&self) -> RequestId {
+        match self {
+            Self::Declare { id, .. }
+            | Self::Set { id, .. }
+            | Self::Get { id, .. }
+            | Self::Discover { id, .. }
+            | Self::Subscribe { id, .. }
+            | Self::Unsubscribe { id, .. }
+            | Self::Remove { id, .. } => *id,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ContextState {
     pub topic: String,
     pub revision: Revision,
+    /// Unix time in milliseconds.
     pub timestamp_ms: u64,
     pub freshness: Freshness,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schema: Option<String>,
+    /// When present, identifies the desired-context revision that this state
+    /// reports as successfully applied.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub applied_revision: Option<Revision>,
     pub value: Value,
@@ -158,7 +193,9 @@ mod tests {
             topic: "system/health".into(),
             schema: Some("system-health/v1".into()),
             value: json!({"status": "healthy"}),
-            access: AccessPolicy { read: vec!["role:hmi".into()] },
+            access: AccessPolicy {
+                read: vec!["role:hmi".into()],
+            },
             retention: Retention::Session,
             ttl: Some(30),
             applied_revision: None,
@@ -167,6 +204,7 @@ mod tests {
         let encoded = serde_json::to_string(&request).unwrap();
         let decoded: Request = serde_json::from_str(&encoded).unwrap();
         assert_eq!(decoded, request);
+        assert_eq!(decoded.id(), 1);
     }
 
     #[test]
@@ -178,5 +216,20 @@ mod tests {
         };
         let encoded = serde_json::to_string(&response).unwrap();
         assert!(encoded.contains("SCHEMA_IMMUTABLE"));
+    }
+
+    #[test]
+    fn applied_revision_is_optional() {
+        let state = ContextState {
+            topic: "camera/CAM01/config/reported".into(),
+            revision: 2,
+            timestamp_ms: 100,
+            freshness: Freshness::Fresh,
+            schema: None,
+            applied_revision: Some(27),
+            value: json!({"fps": 15}),
+        };
+        let encoded = serde_json::to_string(&state).unwrap();
+        assert!(encoded.contains("\"applied_revision\":27"));
     }
 }
