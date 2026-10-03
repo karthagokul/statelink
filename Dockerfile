@@ -4,7 +4,10 @@
 FROM rust:1.79-bookworm AS builder
 WORKDIR /src
 COPY . .
-RUN cargo build --release -p statelink-server -p statelink-client --examples
+RUN cargo build --release \
+    -p statelink-server \
+    -p statelink-mqtt \
+    -p statelink-client --examples
 
 FROM debian:bookworm-slim AS runtime
 RUN apt-get update \
@@ -12,6 +15,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /src/target/release/statelink-server /usr/local/bin/statelink-server
+COPY --from=builder /src/target/release/statelink-mqtt /usr/local/bin/statelink-mqtt
 COPY --from=builder /src/target/release/examples/producer /usr/local/bin/statelink-producer
 COPY --from=builder /src/target/release/examples/consumer /usr/local/bin/statelink-consumer
 
