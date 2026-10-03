@@ -12,7 +12,7 @@ check:
 	cargo test --workspace --all-targets
 
 docker-test:
-	docker run --rm -v "$(CURDIR):/workspace" -w /workspace rust:1.79-bookworm bash -lc \
+	docker run --rm -v "$(CURDIR):/workspace" -w /workspace rust:1.85-bookworm bash -lc \
 		'rustup component add rustfmt clippy && cargo fmt --all -- --check && cargo clippy --workspace --all-targets --all-features -- -D warnings && cargo test --workspace --all-targets'
 
 demo:
