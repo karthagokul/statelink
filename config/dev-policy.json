@@ -1,0 +1,14 @@
+{
+  "rules": [
+    {
+      "subjects": ["id:demo-producer"],
+      "operations": ["declare", "read"],
+      "topic_filter": "demo/#"
+    },
+    {
+      "subjects": ["role:hmi"],
+      "operations": ["read"],
+      "topic_filter": "demo/#"
+    }
+  ]
+}
