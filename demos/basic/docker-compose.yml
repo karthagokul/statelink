@@ -3,7 +3,9 @@
 
 services:
   statelink:
-    build: .
+    build:
+      context: ../..
+      dockerfile: Dockerfile
     ports:
       - "8080:8080"
     environment:
@@ -12,11 +14,13 @@ services:
       STATELINK_POLICY_FILE: "/etc/statelink/policy.json"
       RUST_LOG: "statelink_server=info"
     volumes:
-      - ./config/dev-auth.json:/etc/statelink/auth.json:ro
-      - ./config/dev-policy.json:/etc/statelink/policy.json:ro
+      - ../../config/dev-auth.json:/etc/statelink/auth.json:ro
+      - ../../config/dev-policy.json:/etc/statelink/policy.json:ro
 
   consumer:
-    build: .
+    build:
+      context: ../..
+      dockerfile: Dockerfile
     entrypoint: ["/bin/sh", "-c"]
     command: ["sleep 1; exec /usr/local/bin/statelink-consumer"]
     environment:
@@ -26,7 +30,9 @@ services:
       - statelink
 
   producer:
-    build: .
+    build:
+      context: ../..
+      dockerfile: Dockerfile
     entrypoint: ["/bin/sh", "-c"]
     command: ["sleep 2; exec /usr/local/bin/statelink-producer"]
     environment:

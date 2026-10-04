@@ -1,7 +1,7 @@
 # Copyright (C) 2026 Gokul Kartha
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-.PHONY: test check docker-test demo
+.PHONY: test check docker-test demo demo-down
 
 test:
 	cargo test --workspace --all-targets
@@ -16,4 +16,7 @@ docker-test:
 		'rustup component add rustfmt clippy && cargo fmt --all -- --check && cargo clippy --workspace --all-targets --all-features -- -D warnings && cargo test --workspace --all-targets'
 
 demo:
-	docker compose up --build --abort-on-container-exit
+	docker compose -f demos/basic/docker-compose.yml up --build --abort-on-container-exit
+
+demo-down:
+	docker compose -f demos/basic/docker-compose.yml down
